@@ -1,0 +1,33 @@
+#map {
+    height: 100%;
+    margin-top: 10px;
+}
+
+html,
+body{
+    height: 100%;
+    margin: 0;
+    padding: 0;
+}
+
+#login_btn{
+    
+    display: inline-block;
+    background-color: #3b5998;
+    color: white;
+    opacity: 0.8;
+    padding: 8px;
+    box-shadow: 0px 5px 4px #000;
+    
+}
+
+#login_btn:hover{
+    opacity: 1;
+    cursor: pointer;
+}
+
+#login_btn:active{
+    box-shadow: none;
+    position: relative;
+    top: 5px;
+}

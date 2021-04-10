@@ -1,0 +1,147 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8">
+    <link rel="stylesheet" href="styles.css">
+    <!-- firebaseで取得したコード -->
+    <script src="https://www.gstatic.com/firebasejs/8.3.1/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.3.1/firebase-database.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.3.1/firebase-auth.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.3.1/firebase-analytics.js"></script>
+
+    <script>
+      var firebaseConfig = {
+        apiKey: "AIzaSyDo5f2sFrCqPNkpp6lRoJFfPZhx36gLHYA",
+        authDomain: "test5-395e0.firebaseapp.com",
+        databaseURL: "https://test5-395e0-default-rtdb.firebaseio.com",
+        projectId: "test5-395e0",
+        storageBucket: "test5-395e0.appspot.com",
+        messagingSenderId: "788074810842",
+        appId: "1:788074810842:web:7361e7cf0af95fda15c4e3",
+        measurementId: "G-NGB3PKBX6Y"
+      };
+      firebase.initializeApp(firebaseConfig);
+      firebase.analytics();
+    </script>
+    <!-- -------------ここまで--------------->
+
+    <script src="https://maps.googleapis.com/maps/api/js?key=AIzaSyAHPoZ4Uq-oLKlWmHx7lpuzIo_ZT2Ji_RY&callback=initMap" async defer></script>  <!-- APIが読み込まれるとinitmap実行 -->
+
+    <title>位置情報共有</title>
+    <script>
+    // ---------------------------------ここからデータベースを準備----------------
+    var db = firebase.database();
+    var user_db = db.ref("/users");  /* dbの中にusersという格納先がある */
+    var map = null;
+    var watchID;
+    var users = {};
+    /* --------------------------------------ここまで---------------------------------- */
+
+    /* --------------------ここからメイン処理------------------------ */
+    function initMap() {                                  
+      map = new google.maps.Map($('map'), {  /* マップ生成 */
+        center: {"lat":35.65862127808128, "lng":139.74542051553726},
+        zoom: 12
+      });
+      // ログインボタンのイベント
+      $("login_btn").onclick = login_btn_onclick;  /* 認証のポップアップを表示する */
+      // ユーザー認証イベントの設定
+      firebase.auth().onAuthStateChanged(authStateChange);  /* 自分と他のユーザの位置情報を取得し地図上に表示   ログイン状態が変化したときauthStateChange実行*/
+    }                                                    
+    /* -------------------ここまで------------------------------------ */
+
+    // ログインボタンを押した時
+    function login_btn_onclick() {
+      var cur = firebase.auth().currentUser;  /* 現在ログインしているユーザを取得 */
+      if (!cur) {
+        var provider = new firebase.auth.GoogleAuthProvider(); /* Google アカウントを使用して Firebase でユーザーを認証を行う */
+        firebase.auth().signInWithPopup(provider);  /* 認証のポップアップを表示する */
+      } else {
+        firebase.auth().signOut();  /* サインアウトする */
+      }
+    }
+    // 認証状態が変化したとき
+    function authStateChange(user) {
+      if (user) { //ログイン状態
+        $("login_btn").innerHTML =
+          user.displayName + "のログアウト";  /* ○○のログアウト */
+        setEvent();
+      } else { // ログアウト状態
+        $("login_btn").innerHTML = "ログイン";  /* ログイン */
+      }
+    }
+    // イベントの設定
+    function setEvent() {
+      // 最新２０人のユーザ情報を読み出す
+      user_db.limitToLast(20).on("child_added", checkValue);  /* 追加されたときcheckValue実行 */
+      user_db.limitToLast(20).on("child_changed", checkValue);  /* 変更があった時checkValue実行 */
+      // 位置情報を監視する
+      if (!"geolocation" in navigator) {  /* navigatorの中にgeolocationがない場合 */
+        alert("位置情報を利用できません。");
+      } else {
+        watchID = navigator.geolocation.watchPosition(updatePosition);  /* 端末の位置情報が変わる度にupdate Position実行 */
+      }
+    }
+    // 位置情報を取得できたとき
+    function updatePosition(p) {  /* 取得に成功すると位置情報のコールバックが渡される */
+      var lat = p.coords.latitude;
+      var lng = p.coords.longitude;
+      var user = firebase.auth().currentUser;  /* 現在ログインしているユーザを取得 */
+      if (!user) return;
+      // --------------------------ここからデータベースに記録する----------------------------------------
+      user_db.child(user.uid).set({  /* dbの中のuidという格納先に値を記録する */  
+        username: user.displayName || '',
+        photo: user.photoURL || '',
+        latitude: lat || 0,
+        longitude: lng || 0,
+        timestamp: (new Date()).getTime()  /* 「1970年1月1日 00:00:00」からどれだけ経過してるのか */
+      });
+    /* ------------------ここまで------------------------------------------------------------------------ */
+      if (map == null) return;
+      // 自分のいる位置を中心にする
+      map.setCenter({"lat":lat, "lng":lng});
+      console.log("map=", lat, lng);
+    }
+    /* -------------------------ここからデータベースを取得する------------------------- */
+    function checkValue(data) {  /* data＝データベースのデータ */
+      v = data.val(); /* データベース内の全データをオブジェクトの形で抽出する */
+      var lat = v.latitude;
+      var lng = v.longitude;
+      var key = data.key;
+      var photo = v.photo || '';
+      var bar = '<img width=30 height=30 src="' + photo + '">' +
+        ' ' + v.username;
+        /* ----------------------ここまで--------------------------------- */
+      if (map == null) return;
+      // ------------------------ここから複数人の位置を表示する-------------------------
+      if (!(key in users)) {
+        var marker = new google.maps.Marker({  /* マーカーのオブジェクトを作成 */
+          position: {"lat": lat, "lng": lng},
+          });
+        var info = new google.maps.InfoWindow({  /* 情報ウィンドウを作成 */
+          content: bar});
+        marker.setMap(map);  /* マーカーを表示する */
+        marker.addListener('click', function() {
+          info.open(map, marker);  /* マーカー上に情報ウィンドウを表示する */
+        });
+        users[key] = {
+          "marker": marker,
+          "info": info
+        };
+      }/* ---------------------------------ここまで----------------------------------------- */
+      else {
+        var marker = users[key].marker;
+        marker.setPosition({"lat":lat, "lng":lng});  /* マーカーを生成する位置を登録 */
+      }
+    }
+    function $(id) { return document.getElementById(id); }
+    </script>
+  </head>
+  <body>
+    <div>
+      <a id="login_btn">ログイン</a>
+    </div>
+    <div id="map"></div>
+    <div><ul id="userlist"></ul></div>
+  </body>
+</html>
