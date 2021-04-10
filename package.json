@@ -1,0 +1,5 @@
+{
+  "dependencies": {
+    "@googlemaps/markerwithlabel": "^1.2.2"
+  }
+}

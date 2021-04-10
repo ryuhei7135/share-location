@@ -41,7 +41,9 @@
     function initMap() {                                  
       map = new google.maps.Map($('map'), {  /* マップ生成 */
         center: {"lat":35.65862127808128, "lng":139.74542051553726},
-        zoom: 12
+        zoom: 12,
+        disableDefaultUI: true
+
       });
       // ログインボタンのイベント
       $("login_btn").onclick = login_btn_onclick;  /* 認証のポップアップを表示する */
@@ -58,6 +60,9 @@
         firebase.auth().signInWithPopup(provider);  /* 認証のポップアップを表示する */
       } else {
         firebase.auth().signOut();  /* サインアウトする */
+        user_db.remove();
+
+
       }
     }
     // 認証状態が変化したとき
@@ -75,6 +80,7 @@
       // 最新２０人のユーザ情報を読み出す
       user_db.limitToLast(20).on("child_added", checkValue);  /* 追加されたときcheckValue実行 */
       user_db.limitToLast(20).on("child_changed", checkValue);  /* 変更があった時checkValue実行 */
+      user_db.limitToLast(20).on("child_removed",logoutEvent); /* ログアウトしたときログアウトしたユーザの位置情報を削除 */
       // 位置情報を監視する
       if (!"geolocation" in navigator) {  /* navigatorの中にgeolocationがない場合 */
         alert("位置情報を利用できません。");
@@ -82,6 +88,8 @@
         watchID = navigator.geolocation.watchPosition(updatePosition);  /* 端末の位置情報が変わる度にupdate Position実行 */
       }
     }
+
+    
     // 位置情報を取得できたとき
     function updatePosition(p) {  /* 取得に成功すると位置情報のコールバックが渡される */
       var lat = p.coords.latitude;
@@ -128,16 +136,26 @@
           "marker": marker,
           "info": info
         };
+        alert(v.username+'がログインしました');
+
       }/* ---------------------------------ここまで----------------------------------------- */
       else {
         var marker = users[key].marker;
         marker.setPosition({"lat":lat, "lng":lng});  /* マーカーを生成する位置を登録 */
       }
+
     }
+
+    function logoutEvent(){
+      alert(v.username+'がログアウトしました');
+      window.location.reload(); /* リロードしてログアウトしたユーザの位置を消す */
+    };
+
     function $(id) { return document.getElementById(id); }
     </script>
   </head>
   <body>
+    <h1>位置共有アプリ</h1>
     <div>
       <a id="login_btn">ログイン</a>
     </div>
