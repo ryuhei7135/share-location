@@ -3,29 +3,62 @@ body{
     height: 100%;
     margin: 0;
     padding: 0;
+    width: 100%;
+    color: #fff;
+}
+
+*{
+    box-sizing: border-box;
+}
+
+.container{
+    padding: 0px 25px;
+}
+
+.clear{
+    clear: left;
+}
+
+
+
+.header{
+    width: 100%;
+    background-color:rgb(39,82,152);
+}
+
+.header-left{
+    float: left;
+    padding-bottom: 10px;
 }
 
 #login_btn{
-    margin: 10px;
-    display: inline-block;
-    background-color: #3b5998;
-    color: white;
-    opacity: 0.8;
-    padding: 8px;
-    box-shadow: 0px 5px 4px #000;
+    text-decoration: none;
+    color: #fff;
+    display: block;
+    display:block;
+    width: 100%; 
+}
+
+#header-right{
+    float: right;
+    background-color:rgba(255, 255, 255, 0.3) ;
+    padding: 27px 25px;
+    cursor: pointer;
+    transition: all 0.5s;
+}
+
+#header-right:hover{
+    background-color:rgba(255, 255, 255, 0.5) ;
     
 }
 
-#login_btn:hover{
-    opacity: 1;
-    cursor: pointer;
+.fas{
+    width: 100%;
+    margin-top: 20px;
+    /* background-color: red; */
 }
 
-#login_btn:active{
-    box-shadow: none;
-    position: relative;
-    top: 5px;
-}
+
 
 #map{
     height: 100%;
