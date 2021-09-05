@@ -2,8 +2,10 @@
 <html>
   <head>
     <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
     <link rel="stylesheet" href="styles.css">
-    <!-- firebaseで取得したコード -->
+    <link rel="stylesheet" href="responsive.css">
+    <link rel="stylesheet" href="https://use.fontawesome.com/releases/v5.15.3/css/all.css" integrity="sha384-SZXxX4whJ79/gErwcOYf+zWLeJdY/qpuqC4cAa9rOGUstPomtqpuNWT9wdPEn2fk" crossorigin="anonymous">
     <script src="https://www.gstatic.com/firebasejs/8.3.1/firebase-app.js"></script>
     <script src="https://www.gstatic.com/firebasejs/8.3.1/firebase-database.js"></script>
     <script src="https://www.gstatic.com/firebasejs/8.3.1/firebase-auth.js"></script>
@@ -23,21 +25,17 @@
       firebase.initializeApp(firebaseConfig);
       firebase.analytics();
     </script>
-    <!-- -------------ここまで--------------->
-
     <script src="https://maps.googleapis.com/maps/api/js?key=AIzaSyAHPoZ4Uq-oLKlWmHx7lpuzIo_ZT2Ji_RY&callback=initMap" async defer></script>  <!-- APIが読み込まれるとinitmap実行 -->
 
     <title>位置情報共有</title>
     <script>
-    // ---------------------------------ここからデータベースを準備----------------
     var db = firebase.database();
-    var user_db = db.ref("/users");  /* dbの中にusersという格納先がある */
+    var user_db = db.ref("/users");  
     var map = null;
     var watchID;
     var users = {};
-    /* --------------------------------------ここまで---------------------------------- */
 
-    /* --------------------ここからメイン処理------------------------ */
+    // メイン処理
     function initMap() {                                  
       map = new google.maps.Map($('map'), {  /* マップ生成 */
         center: {"lat":35.65862127808128, "lng":139.74542051553726},
@@ -46,11 +44,10 @@
 
       });
       // ログインボタンのイベント
-      $("login_btn").onclick = login_btn_onclick;  /* 認証のポップアップを表示する */
+      $("header-right").onclick = login_btn_onclick;  /* 認証のポップアップを表示する */
       // ユーザー認証イベントの設定
       firebase.auth().onAuthStateChanged(authStateChange);  /* 自分と他のユーザの位置情報を取得し地図上に表示   ログイン状態が変化したときauthStateChange実行*/
     }                                                    
-    /* -------------------ここまで------------------------------------ */
 
     // ログインボタンを押した時
     function login_btn_onclick() {
@@ -96,22 +93,19 @@
       var lng = p.coords.longitude;
       var user = firebase.auth().currentUser;  /* 現在ログインしているユーザを取得 */
       if (!user) return;
-      // --------------------------ここからデータベースに記録する----------------------------------------
-      user_db.child(user.uid).set({  /* dbの中のuidという格納先に値を記録する */  
+      user_db.child(user.uid).set({  
         username: user.displayName || '',
         photo: user.photoURL || '',
         latitude: lat || 0,
         longitude: lng || 0,
         timestamp: (new Date()).getTime()  /* 「1970年1月1日 00:00:00」からどれだけ経過してるのか */
       });
-    /* ------------------ここまで------------------------------------------------------------------------ */
       if (map == null) return;
       // 自分のいる位置を中心にする
       map.setCenter({"lat":lat, "lng":lng});
       console.log("map=", lat, lng);
     }
-    /* -------------------------ここからデータベースを取得する------------------------- */
-    function checkValue(data) {  /* data＝データベースのデータ */
+    function checkValue(data) {  
       v = data.val(); /* データベース内の全データをオブジェクトの形で抽出する */
       var lat = v.latitude;
       var lng = v.longitude;
@@ -119,9 +113,7 @@
       var photo = v.photo || '';
       var bar = '<img width=30 height=30 src="' + photo + '">' +
         ' ' + v.username;
-        /* ----------------------ここまで--------------------------------- */
       if (map == null) return;
-      // ------------------------ここから複数人の位置を表示する-------------------------
       if (!(key in users)) {
         var marker = new google.maps.Marker({  /* マーカーのオブジェクトを作成 */
           position: {"lat": lat, "lng": lng},
@@ -138,7 +130,7 @@
         };
         alert(v.username+'がログインしました');
 
-      }/* ---------------------------------ここまで----------------------------------------- */
+      }
       else {
         var marker = users[key].marker;
         marker.setPosition({"lat":lat, "lng":lng});  /* マーカーを生成する位置を登録 */
@@ -155,11 +147,18 @@
     </script>
   </head>
   <body>
-    <h1>位置共有アプリ</h1>
-    <div>
-      <a id="login_btn">ログイン</a>
-    </div>
-    <div id="map"></div>
-    <div><ul id="userlist"></ul></div>
+    <header class="header">
+      <div class="container">
+        <div class="header-left">
+          <i class="fas fa-globe-europe fa-3x"></i>
+        </div>
+        <div id="header-right">
+          <a href="#" id="login_btn">ログイン</a>
+        </div>
+        <div class="clear"></div>
+      </div>
+      </header>
+      <div id="map"></div>
+      <div><ul id="userlist"></ul></div>
   </body>
 </html>
